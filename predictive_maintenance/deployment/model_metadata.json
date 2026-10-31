@@ -24,7 +24,7 @@
     "coolant_temp"
   ],
   "target": "engine_condition",
-  "mlflow_run_id": "321c26b2f98d4a3b9d15d2d54808e1cd",
+  "mlflow_run_id": "ad0c28bbb189428e88dacc9635b75080",
   "train_rows": 15627,
   "test_rows": 3907,
   "data_lineage": {
@@ -37,8 +37,8 @@
     "xgboost": "3.2.0",
     "pandas": "3.0.3"
   },
-  "trained_by": "local notebook",
-  "github_run_number": null,
-  "github_sha": null,
-  "trained_at_utc": "2026-10-31T09:06:12+00:00"
+  "trained_by": "GitHub Actions",
+  "github_run_number": "2",
+  "github_sha": "59b123183aeec309670e20cfd0e0312ae16f28ce",
+  "trained_at_utc": "2026-10-31T09:48:18+00:00"
 }
