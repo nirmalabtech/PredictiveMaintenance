@@ -1,0 +1,17 @@
+{
+  "dataset": "engine_data",
+  "path": "predictive_maintenance/data/engine_data.csv",
+  "rows": 19535,
+  "columns": [
+    "Engine rpm",
+    "Lub oil pressure",
+    "Fuel pressure",
+    "Coolant pressure",
+    "lub oil temp",
+    "Coolant temp",
+    "Engine Condition"
+  ],
+  "target": "Engine Condition",
+  "md5": "629ad357fe0e5d0e6beb7421e2ba2c32",
+  "registered_at_utc": "2026-10-31T09:04:58+00:00"
+}

@@ -1,0 +1,44 @@
+{
+  "model_name": "GradientBoosting",
+  "selection_metric": "cv_roc_auc",
+  "best_params": {
+    "learning_rate": 0.05,
+    "max_depth": 2,
+    "n_estimators": 200
+  },
+  "cv_roc_auc": 0.7024,
+  "test_metrics": {
+    "test_accuracy": 0.6688,
+    "test_precision": 0.693,
+    "test_recall": 0.8522,
+    "test_f1": 0.7644,
+    "test_roc_auc": 0.7016
+  },
+  "decision_threshold": 0.5,
+  "features": [
+    "engine_rpm",
+    "lub_oil_pressure",
+    "fuel_pressure",
+    "coolant_pressure",
+    "lub_oil_temp",
+    "coolant_temp"
+  ],
+  "target": "engine_condition",
+  "mlflow_run_id": "321c26b2f98d4a3b9d15d2d54808e1cd",
+  "train_rows": 15627,
+  "test_rows": 3907,
+  "data_lineage": {
+    "dataset_md5": "629ad357fe0e5d0e6beb7421e2ba2c32",
+    "train_md5": "061860635cd4ff06fc8a844b28bf8672",
+    "test_md5": "43148ddca11d8953d6d2ff97c879b116"
+  },
+  "library_versions": {
+    "scikit-learn": "1.8.0",
+    "xgboost": "3.2.0",
+    "pandas": "3.0.3"
+  },
+  "trained_by": "local notebook",
+  "github_run_number": null,
+  "github_sha": null,
+  "trained_at_utc": "2026-10-31T09:06:12+00:00"
+}

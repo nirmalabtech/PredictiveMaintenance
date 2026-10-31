@@ -1,0 +1,141 @@
+name: Predictive Maintenance Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pipeline-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  MLFLOW_DISABLE_AGENT_HINT: "1"
+
+jobs:
+  # ---------------------------------------------------------------- 1. Register
+  register-dataset:
+    name: Register Dataset
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+      - name: Install Dependencies
+        run: pip install -r predictive_maintenance/requirements.txt
+      - name: Validate and Register Dataset
+        run: python predictive_maintenance/model_building/data_register.py
+
+  # ------------------------------------------------------------- 2. Preparation
+  data-prep:
+    name: Data Preparation
+    needs: register-dataset
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+      - name: Install Dependencies
+        run: pip install -r predictive_maintenance/requirements.txt
+      - name: Clean Data and Build Train/Test Split
+        run: python predictive_maintenance/model_building/prep.py
+      - name: Upload Train/Test Split
+        uses: actions/upload-artifact@v4
+        with:
+          name: data-splits
+          path: splits/
+          retention-days: 7
+
+  # ---------------------------------------------------------------- 3. Training
+  model-training:
+    name: Model Building and Training
+    needs: data-prep
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+      - name: Install Dependencies
+        run: pip install -r predictive_maintenance/requirements.txt
+      - name: Download Train/Test Split
+        uses: actions/download-artifact@v4
+        with:
+          name: data-splits
+          path: splits/
+      - name: Tune, Track, Evaluate and Save the Best Model
+        run: python predictive_maintenance/model_building/train.py
+      - name: Upload MLflow Tracking Data
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mlflow-tracking
+          path: |
+            mlflow.db
+            mlruns/
+            predictive_maintenance/reports/
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Commit Trained Model to Repository
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -f predictive_maintenance/deployment/best_model.joblib \
+                     predictive_maintenance/deployment/model_metadata.json \
+                     predictive_maintenance/reports/model_comparison.csv \
+                     predictive_maintenance/reports/cv_results.csv
+          if git diff --staged --quiet; then
+            echo "Model unchanged; nothing to commit."
+          else
+            git commit -m "Update trained model from pipeline run #${{ github.run_number }} [skip ci]"
+            git pull --rebase origin ${{ github.ref_name }}
+            git push origin HEAD:${{ github.ref_name }}
+            echo "Trained model committed to ${{ github.ref_name }}."
+          fi
+
+  # -------------------------------------------------------------- 4. Deployment
+  deploy:
+    name: Verify Deployment
+    needs: model-training
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+      - name: Install Deployment Dependencies
+        run: pip install -r predictive_maintenance/deployment/requirements.txt
+      - name: Verify Deployment Files Are Present
+        run: |
+          test -f predictive_maintenance/deployment/app.py
+          test -f predictive_maintenance/deployment/requirements.txt
+          test -f predictive_maintenance/deployment/best_model.joblib
+          test -f predictive_maintenance/deployment/model_metadata.json
+          echo "All deployment files are present on ${{ github.ref_name }}."
+      - name: Smoke Test the Streamlit App with the Committed Model
+        run: |
+          python - <<'PYCODE'
+          from streamlit.testing.v1 import AppTest
+          app = AppTest.from_file("predictive_maintenance/deployment/app.py", default_timeout=120).run()
+          assert not app.exception, app.exception
+          app.button[0].click().run()          # press "Predict engine condition"
+          assert not app.exception, app.exception
+          print("App loaded the committed model and returned a prediction:", app.metric[0].value)
+          PYCODE
+      - name: Deployment Notice
+        run: |
+          echo "Model committed to ${{ github.ref_name }}."
+          echo "Streamlit Community Cloud watches this branch and redeploys"
+          echo "predictive_maintenance/deployment/app.py automatically."
