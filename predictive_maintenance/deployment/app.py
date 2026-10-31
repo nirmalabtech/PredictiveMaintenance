@@ -27,8 +27,9 @@ st.write("Enter the latest engine sensor readings to estimate the risk that the 
 
 
 @st.cache_resource
-def load_model():
-    """Load the model committed to the repository by the GitHub Actions pipeline."""
+def load_model(model_version):
+    """Load the model committed to the repository by the GitHub Actions pipeline.
+    `model_version` (the file's modification time) makes Streamlit reload it after each new pipeline commit."""
     if not os.path.exists(MODEL_PATH):
         st.error("Trained model not found. Run the GitHub Actions pipeline so it commits "
                  "`best_model.joblib` to `predictive_maintenance/deployment/`, then reload.")
@@ -37,7 +38,7 @@ def load_model():
     return joblib.load(MODEL_PATH), meta
 
 
-model, meta = load_model()
+model, meta = load_model(os.path.getmtime(MODEL_PATH) if os.path.exists(MODEL_PATH) else 0)
 features = meta.get("features", list(SENSORS))
 
 with st.sidebar:
