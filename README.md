@@ -12,4 +12,4 @@ Classifies engine condition (needs maintenance vs normal) from six sensor readin
 | `predictive_maintenance/reports/` | Model comparison and tuning results written by the pipeline |
 | `.github/workflows/pipeline.yml` | GitHub Actions workflow: register -> prep -> train -> deploy |
 
-Live app: see the Streamlit Community Cloud link in the project report
+Live app: https://predictivemaintenance-kyfmh7zx4mgtwnvgnxwc2f.streamlit.app/
